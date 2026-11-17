@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ckb" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>خەرجی خانووەکان</title>
+<meta name="theme-color" content="#1b5b89">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="خەرجی خانوو">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@600;700&family=Noto+Sans+Arabic:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* Layout: one-column ledger, sticky app bar on top, one action bar at the bottom, forms slide up as sheets */
+  --bg:#edf1f4;
+  --surface:#ffffff;
+  --ink:#16212c;
+  --muted:#5a6876;
+  --line:#d8e0e7;
+  --accent:#1b5b89;
+  --accent-ink:#ffffff;
+  --accent-soft:#e2edf6;
+  --good:#1b7a47;
+  --good-soft:#e1f3e8;
+  --bad:#b3261e;
+  --bad-soft:#fbe6e4;
+  --stripe:#f6f8fa;
+  --f-body:"Noto Sans Arabic","Segoe UI",Tahoma,sans-serif;
+  --f-display:"Noto Kufi Arabic","Noto Sans Arabic",Tahoma,sans-serif;
+  --r:12px;
+  color-scheme:light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e141a; --surface:#17202a; --ink:#e5ecf2; --muted:#93a2b0; --line:#2a3642;
+    --accent:#5ea8de; --accent-ink:#0b1620; --accent-soft:#1c3346;
+    --good:#4cc286; --good-soft:#163527; --bad:#ff7a6b; --bad-soft:#3d1c19; --stripe:#1b2530;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e141a; --surface:#17202a; --ink:#e5ecf2; --muted:#93a2b0; --line:#2a3642;
+  --accent:#5ea8de; --accent-ink:#0b1620; --accent-soft:#1c3346;
+  --good:#4cc286; --good-soft:#163527; --bad:#ff7a6b; --bad-soft:#3d1c19; --stripe:#1b2530;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;-webkit-text-size-adjust:100%}
+button,input,select{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.num{font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+
+/* app bar */
+.bar{position:sticky;top:0;z-index:20;background:var(--surface);border-bottom:1px solid var(--line)}
+.bar-in{max-width:680px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:10px 16px;min-height:58px}
+.bar h1{font-family:var(--f-display);font-size:18px;margin:0;font-weight:700;flex:1;text-wrap:balance}
+.bar h1 small{display:block;font-family:var(--f-body);font-size:12px;font-weight:500;color:var(--muted);margin-top:-2px}
+.icon-btn{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:10px;border:1px solid var(--line);background:var(--surface)}
+.icon-btn svg{width:20px;height:20px}
+.pdf-btn{display:inline-flex;align-items:center;gap:6px;height:40px;padding:0 14px;border-radius:10px;border:0;background:var(--accent);color:var(--accent-ink);font-weight:600;font-size:14px}
+.pdf-btn svg{width:18px;height:18px}
+
+.status{display:none;max-width:680px;margin:10px auto 0;padding:10px 14px;border-radius:10px;font-size:13.5px;background:var(--bad-soft);color:var(--bad);margin-inline:16px}
+.status.show{display:block}
+@media (min-width:712px){.status{margin-inline:auto}}
+
+main{max-width:680px;margin:0 auto;padding:14px 16px 120px;display:flex;flex-direction:column;gap:14px}
+
+/* KPI */
+.kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;min-width:0}
+.kpi b{display:block;font-size:12px;font-weight:500;color:var(--muted)}
+.kpi span{display:block;font-family:var(--f-display);font-weight:700;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.kpi.good{background:var(--good-soft);border-color:transparent}.kpi.good span{color:var(--good)}
+.kpi.bad{background:var(--bad-soft);border-color:transparent}.kpi.bad span{color:var(--bad)}
+@media (max-width:380px){.kpi span{font-size:15px}.kpi{padding:9px 9px}}
+
+/* tabs */
+.tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:4px;overflow-x:auto}
+.tab{flex:1;white-space:nowrap;border:0;background:transparent;border-radius:9px;padding:8px 10px;font-size:14px;font-weight:600;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--accent-soft);color:var(--accent)}
+
+/* lists of receipts */
+.list{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.list-h{width:100%;display:flex;align-items:center;gap:10px;padding:12px 14px;border:0;background:transparent;text-align:start}
+.list-t{font-family:var(--f-display);font-weight:700;font-size:15px}
+.chip{font-size:12px;font-weight:600;padding:1px 9px;border-radius:99px;background:var(--accent-soft);color:var(--accent)}
+.chip.full{background:var(--stripe);color:var(--muted)}
+.list-sum{margin-inline-start:auto;font-size:13px;color:var(--muted);text-align:end;line-height:1.35}
+.chev{width:18px;height:18px;flex:none;transition:transform .15s}
+.list.open .chev{transform:rotate(180deg)}
+.rows{list-style:none;margin:0;padding:0;border-top:1px solid var(--line)}
+.rows li+li{border-top:1px solid var(--line)}
+.rc{width:100%;display:flex;align-items:center;gap:12px;padding:10px 14px;border:0;background:transparent;text-align:start}
+.rc:hover{background:var(--stripe)}
+.rc-n{flex:none;width:30px;height:30px;border-radius:8px;background:var(--stripe);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:var(--muted)}
+.rc-main{flex:1;min-width:0;display:flex;flex-direction:column}
+.rc-d{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc-m{font-size:12.5px;color:var(--muted)}
+.rc-a{flex:none;text-align:end;font-weight:700;font-size:14.5px;line-height:1.3}
+.rc-a i,.list-sum i,.cur{font-style:normal;font-weight:500;font-size:11.5px;color:var(--muted)}
+.rc-a.usd{color:var(--accent)}
+
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:var(--r);padding:26px 18px;text-align:center;color:var(--muted)}
+
+/* cards: houses */
+.hcard{width:100%;display:flex;flex-direction:column;gap:8px;text-align:start;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px}
+.hcard:hover{border-color:var(--accent)}
+.hcard-top{display:flex;align-items:center;gap:10px}
+.hcard-t{font-family:var(--f-display);font-weight:700;font-size:17px;flex:1}
+.pill{font-size:12px;font-weight:700;padding:2px 10px;border-radius:99px}
+.pill.good{background:var(--good-soft);color:var(--good)}
+.pill.bad{background:var(--bad-soft);color:var(--bad)}
+.hcard-m{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px;color:var(--muted)}
+.hcard-m b{color:var(--ink);font-weight:600}
+.sec-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.sec-h h2{font-family:var(--f-display);font-size:16px;margin:0}
+
+/* tables in summary */
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+.panel h3{margin:0;font-family:var(--f-display);font-size:15px}
+.tbl-wrap{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;font-size:14px}
+table.t th{font-size:12.5px;color:var(--muted);font-weight:600;text-align:start;padding:6px 8px;border-bottom:1px solid var(--line)}
+table.t td{padding:8px;border-bottom:1px solid var(--line)}
+table.t td.n,table.t th.n{text-align:end}
+table.t tfoot td{font-weight:700;border-bottom:0;background:var(--stripe)}
+.calc{display:flex;flex-direction:column}
+.calc div{display:flex;justify-content:space-between;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.calc div:last-child{border-bottom:0}
+.calc .good b{color:var(--good)}.calc .bad b{color:var(--bad)}
+.calc .big b{font-family:var(--f-display);font-size:17px}
+.note{font-size:13px;color:var(--muted);margin:0}
+
+/* bottom action bar */
+.act{position:fixed;inset-inline:0;bottom:0;z-index:15;background:linear-gradient(to top,var(--bg) 70%,transparent);padding:18px 16px 14px}
+.act-in{max-width:648px;margin:0 auto;display:flex;gap:8px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 18px;border-radius:12px;border:1px solid var(--line);background:var(--surface);font-weight:600;font-size:15px}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.danger{background:var(--bad-soft);border-color:transparent;color:var(--bad)}
+.btn.ghost{background:transparent}
+.btn.wide{flex:1}
+.btn:disabled{opacity:.55;cursor:default}
+.btn svg{width:20px;height:20px}
+
+/* sheet */
+.backdrop{position:fixed;inset:0;z-index:40;background:rgba(10,18,26,.45);display:none;align-items:flex-end;justify-content:center}
+.backdrop.show{display:flex}
+.sheet{width:100%;max-width:560px;max-height:92%;overflow-y:auto;background:var(--surface);border-radius:18px 18px 0 0;padding:8px 18px 20px;display:flex;flex-direction:column;gap:14px}
+@media (min-width:600px){.backdrop{align-items:center}.sheet{border-radius:18px}}
+.grab{width:42px;height:4px;border-radius:9px;background:var(--line);margin:4px auto 0}
+.sheet-h{display:flex;align-items:flex-start;gap:10px}
+.sheet-h h3{margin:0;flex:1;font-family:var(--f-display);font-size:17px}
+.sheet-h h3 small{display:block;font-family:var(--f-body);font-size:12.5px;font-weight:500;color:var(--muted)}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;font-weight:600;color:var(--muted)}
+.field input{height:48px;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:0 12px;font-size:16px;width:100%}
+.field input:focus{border-color:var(--accent);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.field input.ltr{direction:ltr;text-align:right}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.seg{display:flex;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:3px;height:48px}
+.seg button{flex:1;border:0;background:transparent;border-radius:8px;font-weight:600;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--accent);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{border:1px solid var(--line);background:var(--surface);border-radius:99px;padding:3px 12px;font-size:13px}
+.hint{font-size:12.5px;color:var(--muted);min-height:1.4em}
+.err{font-size:13px;color:var(--bad);min-height:1.4em}
+.row-btns{display:flex;gap:8px;flex-wrap:wrap}
+
+/* report overlay */
+.report{position:fixed;inset:0;z-index:50;background:var(--bg);display:none;flex-direction:column}
+.report.show{display:flex}
+.report-body{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;align-items:center;gap:14px}
+.report-body img{width:100%;max-width:620px;background:#fff;border-radius:4px;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+.report-foot{background:var(--surface);border-top:1px solid var(--line);padding:12px 16px}
+.report-foot .act-in{flex-direction:column}
+
+.toast{position:fixed;left:50%;bottom:86px;transform:translateX(-50%);z-index:60;background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:12px;font-size:14px;font-weight:600;opacity:0;pointer-events:none;transition:opacity .2s;max-width:calc(100% - 32px);text-align:center}
+.toast.show{opacity:1}
+.acct{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:12px 14px}
+.acct img{width:42px;height:42px;border-radius:50%;flex:none;background:var(--stripe)}
+.acct-t{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.45}
+.acct-t b{font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct-t span{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+.lock{font-size:12px;font-weight:600;padding:2px 9px;border-radius:99px;background:var(--good-soft);color:var(--good);white-space:nowrap}
+.skel{height:76px;border-radius:var(--r);background:var(--surface);border:1px solid var(--line)}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+
+/* ---- standalone additions ---- */
+[hidden]{display:none!important}
+.btn.small{min-height:36px;padding:0 12px;font-size:13.5px}
+.avatar{width:42px;height:42px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--accent-soft);color:var(--accent);font-weight:700;font-size:18px}
+.screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 16px}
+.auth-card{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:24px 20px;display:flex;flex-direction:column;gap:14px}
+.brand{display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center}
+.brand img{width:64px;height:64px;border-radius:16px}
+.brand h1{margin:0;font-family:var(--f-display);font-size:21px}
+.brand p{margin:0;color:var(--muted);font-size:13.5px}
+.auth-card h2{margin:0;font-family:var(--f-display);font-size:16px}
+.or{display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px}
+.or::before,.or::after{content:"";flex:1;height:1px;background:var(--line)}
+.links{display:flex;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.link{border:0;background:none;padding:4px 0;color:var(--accent);font-weight:600;font-size:13.5px}
+.ok{font-size:13px;color:var(--good);min-height:1.2em}
+.auth-card .err:empty,.auth-card .ok:empty{display:none}
+.setup ol{margin:0;padding-inline-start:20px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.report-foot .btns{display:flex;gap:8px;flex-wrap:wrap}
+.report-foot .btns .btn{flex:1;min-width:120px}
+@media print{
+  @page{size:A4;margin:0}
+  html,body{background:#fff!important}
+  body>*:not(#report){display:none!important}
+  #report{position:static!important;display:block!important;background:#fff!important}
+  #report .bar,#report .report-foot{display:none!important}
+  #report .report-body{display:block!important;padding:0!important;overflow:visible!important}
+  #report .report-body img{display:block;width:210mm;height:297mm;max-width:none;margin:0;box-shadow:none;border-radius:0;break-after:page;page-break-after:always}
+  #report .report-body img:last-child{break-after:auto;page-break-after:auto}
+}
+</style>
+</head>
+<body>
+<div class="screen" id="splash"><div class="brand"><img src="icon-192.png" alt=""><h1>خەرجی خانووەکان</h1><p id="splash-msg">چاوەڕێ بکە…</p></div></div>
+
+<div class="screen" id="auth" hidden>
+  <div class="auth-card">
+    <div class="brand"><img src="icon-192.png" alt=""><h1>خەرجی خانووەکان</h1><p>پسوولە، پارەی وەرگیراو و ڕاپۆرت</p></div>
+    <button class="btn wide" id="g-btn" type="button">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>
+      چوونەژوورەوە بە Gmail
+    </button>
+    <div class="or">یان بە ئیمەیڵ و پاسۆرد</div>
+    <h2 id="a-title">چوونەژوورەوە</h2>
+    <form id="af" novalidate style="display:flex;flex-direction:column;gap:12px">
+      <div class="field"><label for="a-email">ئیمەیڵ</label><input id="a-email" class="ltr" type="email" inputmode="email" autocomplete="email" placeholder="name@gmail.com"></div>
+      <div class="field"><label for="a-pass">پاسۆرد</label><input id="a-pass" class="ltr" type="password" autocomplete="current-password"></div>
+      <div class="err" id="a-err"></div>
+      <div class="ok" id="a-ok"></div>
+      <button type="submit" class="btn primary wide" id="a-submit">چوونەژوورەوە</button>
+      <div class="links"><button type="button" class="link" id="a-mode">هەژمارت نییە؟ هەژماری نوێ دروست بکە</button><button type="button" class="link" id="a-reset">پاسۆردت بیرچووە؟</button></div>
+    </form>
+  </div>
+</div>
+
+<div class="screen" id="setup" hidden>
+  <div class="auth-card setup">
+    <div class="brand"><img src="icon-192.png" alt=""><h1>یەک هەنگاو ماوە</h1><p>ئەپەکە هێشتا بە Firebase نەبەستراوەتەوە.</p></div>
+    <ol>
+      <li>لە console.firebase.google.com پرۆژەیەک دروست بکە.</li>
+      <li>Authentication چالاک بکە: Google و Email/Password.</li>
+      <li>Firestore Database دروست بکە و ناوەڕۆکی firestore.rules دابنێ.</li>
+      <li>زانیارییەکانی firebaseConfig لە فایلی firebase-config.js دابنێ.</li>
+    </ol>
+    <p class="note">هەموو هەنگاوەکان بە وردی لە فایلی README.md نووسراون.</p>
+  </div>
+</div>
+
+<header class="bar" id="appbar" hidden>
+  <div class="bar-in" id="bar"></div>
+</header>
+<div class="status" id="status" role="status"></div>
+<main id="main" hidden></main>
+<div class="act" id="act" hidden><div class="act-in" id="act-in"></div></div>
+
+<div class="backdrop" id="backdrop"><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<section class="report" id="report" aria-label="ڕاپۆرت">
+  <header class="bar"><div class="bar-in">
+    <button class="icon-btn" data-act="report-close" aria-label="گەڕانەوە"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></button>
+    <h1 id="report-title">ڕاپۆرت</h1>
+  </div></header>
+  <div class="report-body" id="report-body"></div>
+  <div class="report-foot"><div class="act-in" style="flex-direction:column">
+    <div class="btns">
+      <button class="btn primary" id="pr-btn" data-act="print" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>
+        پرێنت
+      </button>
+      <button class="btn" id="dl-btn" data-act="download" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg>
+        داگرتنی PDF
+      </button>
+      <button class="btn" id="sh-btn" data-act="share" hidden disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v13"/></svg>
+        ناردن
+      </button>
+    </div>
+    <p class="note">لە پەنجەرەی پرێنتدا دەتوانیت «Save as PDF»یش هەڵبژێریت.</p>
+  </div></div>
+</section>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script type="module">
+/* ---------- helpers ---------- */
+const $ = (s, el = document) => el.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const KU = "٠١٢٣٤٥٦٧٨٩";
+const ku = s => String(s).replace(/\d/g, d => KU[d]);
+const r2 = x => Math.round((+x || 0) * 100) / 100;
+const fmtI = n => Math.round(+n || 0).toLocaleString("en-US");
+const fmtU = n => "$" + (+n || 0).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+const fmtD = iso => { if (!iso) return ""; const p = String(iso).split("-"); return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : String(iso); };
+const todayISO = () => { const t = new Date(); return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`; };
+const latin = s => String(s ?? "").trim().replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776);
+function parseNum(s){ const v = parseFloat(latin(s).replace(/٫/g, ".").replace(/[٬,\s]/g, "")); return isFinite(v) ? v : NaN; }
+const uid = p => p + Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const sum = (a, f) => a.reduce((t, x) => t + (+f(x) || 0), 0);
+const lsGet = k => { try { return localStorage.getItem(k); } catch(e) { return null; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch(e) {} };
+const ICON = {
+  back: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  print: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9V3h10v6"/><rect x="3" y="9" width="18" height="8" rx="2"/><path d="M7 14h10v7H7z"/></svg>',
+  plus: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  chev: '<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  x: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+};
+const DEFAULT_DETAILS = ["کرێی کرێکار","کەل و پەلی بیناسازی","سەرپەرشتیار","چیمەنتۆ","ئاسن","خۆڵ و چەو","کۆڕی سقف","دروستکردنی دیوار","کارەبا","ئاو و ئاوەڕۆ","گواستنەوە"];
+
+/* ---------- state ---------- */
+const S = {
+  houses: new Map(), receipts: new Map(), payments: new Map(),
+  got: {houses:false, receipts:false, payments:false},
+  view: "home", hid: null, tab: "receipts", listOpen: new Map(),
+  lastDate: null, lastCur: "iqd", offline: false, firstRender: true, readOnly: false
+};
+let USER = null; /* signed-in Firebase user */
+const COLMAP = {houses: "houses", receipts: "receipts", payments: "payments"};
+
+function houseList(){ return [...S.houses.entries()].map(([id, h]) => ({id, ...h})).sort((a, b) => (a.createdAt||0) - (b.createdAt||0)); }
+function receiptsOf(hid){ return [...S.receipts.entries()].filter(([, r]) => r.house === hid).map(([id, r]) => ({id, ...r})).sort((a, b) => (a.seq||0) - (b.seq||0)); }
+function paymentsOf(hid){ return [...S.payments.entries()].filter(([, p]) => p.house === hid).map(([id, p]) => ({id, ...p})).sort((a, b) => (a.seq||0) - (b.seq||0)); }
+function chunk(a, n){ const out = []; for (let i = 0; i < a.length; i += n) out.push(a.slice(i, i + n)); return out; }
+function totals(hid){
+  const h = S.houses.get(hid) || {};
+  const rs = receiptsOf(hid), ps = paymentsOf(hid);
+  const rate = +h.rate > 0 ? +h.rate : 0;
+  const iqd = sum(rs, r => r.iqd), usd = sum(rs, r => r.usd);
+  const iqdUsd = rate ? iqd / rate : 0;
+  const total = r2(usd + iqdUsd);
+  const recv = r2(sum(ps, p => p.usd) + (rate ? sum(ps, p => p.iqd) / rate : 0));
+  return {h, rs, ps, lists: chunk(rs, 25), rate, iqd, usd, iqdUsd, total, recv,
+    paid: Math.min(total, recv), remain: r2(Math.max(0, recv - total)), debt: r2(Math.max(0, total - recv))};
+}
+
+/* ---------- storage: Firebase (Firestore), each account has its own data ---------- */
+const FB = {};
+let UNSUBS = [];
+function userCol(col){ return FB.collection(FB.db, "users", USER.uid, col); }
+function userDoc(col, id){ return FB.doc(FB.db, "users", USER.uid, col, id); }
+/* Writes show up at once (Firestore updates the screen before the server answers, and keeps them if the phone is offline). */
+function put(col, id, data){
+  FB.setDoc(userDoc(col, id), data).catch(e => toast(errText(e)));
+  return Promise.resolve();
+}
+function del(col, id){
+  FB.deleteDoc(userDoc(col, id)).catch(e => toast(errText(e)));
+  return Promise.resolve();
+}
+function errText(e){
+  const c = (e && e.code) || "";
+  if (c.includes("permission-denied")) return "ڕێگە نەدرا. لە Firebase یاساکانی Firestore بپشکنە (firestore.rules).";
+  if (c.includes("resource-exhausted")) return "سنووری بێبەرامبەری Firebase تەواو بووە بۆ ئەمڕۆ.";
+  if (c.includes("unavailable")) return "ئینتەرنێت نییە. کە هێڵ هاتەوە، خۆی پاشەکەوت دەکات.";
+  return "پاشەکەوت نەکرا. دووبارە هەوڵ بدەرەوە.";
+}
+function setStatus(msg){ const el = $("#status"); el.textContent = msg || ""; el.classList.toggle("show", !!msg); }
+function stopSubs(){ UNSUBS.forEach(u => { try { u(); } catch(e) {} }); UNSUBS = []; }
+function startSubs(){
+  S.houses = new Map(); S.receipts = new Map(); S.payments = new Map();
+  S.got = {houses:false, receipts:false, payments:false};
+  S.view = "home"; S.hid = null; S.firstRender = true;
+  $("#main").innerHTML = `<div class="skel"></div><div class="skel"></div>`;
+  const timer = setTimeout(() => { if (!ready()) setStatus("پەیوەندی بە سێرڤەرەوە نەکرا. هێڵی ئینتەرنێت بپشکنە."); }, 10000);
+  ["houses", "receipts", "payments"].forEach(col => {
+    UNSUBS.push(FB.onSnapshot(userCol(col), snap => {
+      const m = new Map(); snap.docs.forEach(d => m.set(d.id, d.data()));
+      S[col] = m; S.got[col] = true;
+      if (ready()){ clearTimeout(timer); setStatus(""); }
+      render();
+    }, err => {
+      clearTimeout(timer); S.got[col] = true;
+      setStatus(String(err && err.code || "").includes("permission-denied")
+        ? "Firestore ڕێگە نادات. یاساکانی firestore.rules لە Firebase دابنێ (بڕوانە README)."
+        : "خوێندنەوەی داتاکان شکستی هێنا. لاپەڕەکە نوێ بکەرەوە.");
+      render();
+    }));
+  });
+}
+
+/* ---------- sign in ---------- */
+const AUTH_ERR = {
+  "auth/invalid-email": "ئیمەیڵەکە دروست نییە.",
+  "auth/missing-email": "ئیمەیڵەکەت بنووسە.",
+  "auth/missing-password": "پاسۆردەکەت بنووسە.",
+  "auth/user-not-found": "ئیمەیڵ یان پاسۆرد هەڵەیە.",
+  "auth/wrong-password": "ئیمەیڵ یان پاسۆرد هەڵەیە.",
+  "auth/invalid-credential": "ئیمەیڵ یان پاسۆرد هەڵەیە.",
+  "auth/invalid-login-credentials": "ئیمەیڵ یان پاسۆرد هەڵەیە.",
+  "auth/email-already-in-use": "ئەم ئیمەیڵە پێشتر هەژماری هەیە. «چوونەژوورەوە» هەڵبژێرە.",
+  "auth/weak-password": "پاسۆرد دەبێت لانیکەم ٦ پیت یان ژمارە بێت.",
+  "auth/too-many-requests": "زۆر هەوڵ درا. چەند خولەکێک چاوەڕێ بکە.",
+  "auth/network-request-failed": "ئینتەرنێت نییە. هێڵەکەت بپشکنە.",
+  "auth/operation-not-allowed": "ئەم شێوازی چوونەژوورەوەیە لە Firebase چالاک نەکراوە (بڕوانە README).",
+  "auth/unauthorized-domain": "ئەم لینکە لە Firebase زیاد نەکراوە. لە Authentication › Settings › Authorized domains زیادی بکە.",
+  "auth/popup-blocked": "پەنجەرەی Google داخرا. دووبارە هەوڵ بدەرەوە."
+};
+const authErr = e => AUTH_ERR[e && e.code] || "چوونەژوورەوە سەرکەوتوو نەبوو. دووبارە هەوڵ بدەرەوە.";
+let authMode = "in";
+function setAuthMode(m){
+  authMode = m;
+  $("#a-title").textContent = m === "in" ? "چوونەژوورەوە" : "دروستکردنی هەژماری نوێ";
+  $("#a-submit").textContent = m === "in" ? "چوونەژوورەوە" : "دروستکردنی هەژمار";
+  $("#a-mode").textContent = m === "in" ? "هەژمارت نییە؟ هەژماری نوێ دروست بکە" : "هەژمارت هەیە؟ بچۆ ژوورەوە";
+  $("#a-pass").setAttribute("autocomplete", m === "in" ? "current-password" : "new-password");
+  $("#a-err").textContent = ""; $("#a-ok").textContent = "";
+}
+function showScreen(which){
+  $("#splash").hidden = which !== "splash";
+  $("#auth").hidden = which !== "auth";
+  $("#setup").hidden = which !== "setup";
+  const app = which === "app";
+  ["#appbar", "#main", "#act"].forEach(s => { $(s).hidden = !app; });
+  if (!app) setStatus("");
+}
+function busy(on){ ["#g-btn", "#a-submit"].forEach(s => { $(s).disabled = on; }); }
+async function googleSignIn(){
+  $("#a-err").textContent = ""; busy(true);
+  const provider = new FB.GoogleAuthProvider();
+  provider.setCustomParameters({prompt: "select_account"});
+  try { await FB.signInWithPopup(FB.auth, provider); }
+  catch(e){
+    if (e && (e.code === "auth/popup-blocked" || e.code === "auth/operation-not-supported-in-this-environment")){
+      try { await FB.signInWithRedirect(FB.auth, provider); return; } catch(e2){ $("#a-err").textContent = authErr(e2); }
+    } else if (!(e && (e.code === "auth/popup-closed-by-user" || e.code === "auth/cancelled-popup-request"))) $("#a-err").textContent = authErr(e);
+  }
+  busy(false);
+}
+async function emailSubmit(){
+  const email = $("#a-email").value.trim(), pass = $("#a-pass").value;
+  $("#a-err").textContent = ""; $("#a-ok").textContent = "";
+  if (!email){ $("#a-err").textContent = "ئیمەیڵەکەت بنووسە."; return; }
+  if (!pass){ $("#a-err").textContent = "پاسۆردەکەت بنووسە."; return; }
+  busy(true);
+  try {
+    if (authMode === "in") await FB.signInWithEmailAndPassword(FB.auth, email, pass);
+    else await FB.createUserWithEmailAndPassword(FB.auth, email, pass);
+  } catch(e){ $("#a-err").textContent = authErr(e); }
+  busy(false);
+}
+async function resetPassword(){
+  const email = $("#a-email").value.trim();
+  $("#a-err").textContent = ""; $("#a-ok").textContent = "";
+  if (!email){ $("#a-err").textContent = "سەرەتا ئیمەیڵەکەت لە خانەی سەرەوە بنووسە."; $("#a-email").focus(); return; }
+  try { await FB.sendPasswordResetEmail(FB.auth, email); $("#a-ok").textContent = "ئیمەیڵێکمان بۆ ناردیت بۆ گۆڕینی پاسۆرد. سەیری Inbox و Spam بکە."; }
+  catch(e){ $("#a-err").textContent = authErr(e); }
+}
+
+async function boot(){
+  showScreen("splash");
+  let cfg = null;
+  try { cfg = (await import("./firebase-config.js")).firebaseConfig; } catch(e) { cfg = null; }
+  if (!cfg || !cfg.apiKey || /PASTE|دابنێ/.test(cfg.apiKey)){ showScreen("setup"); return; }
+  const V = "10.12.2", base = `https://www.gstatic.com/firebasejs/${V}/`;
+  let appM, authM, fsM;
+  try { [appM, authM, fsM] = await Promise.all([import(base + "firebase-app.js"), import(base + "firebase-auth.js"), import(base + "firebase-firestore.js")]); }
+  catch(e){ $("#splash-msg").textContent = "ئینتەرنێت نییە. هێڵەکەت بپشکنە و لاپەڕەکە نوێ بکەرەوە."; return; }
+  Object.assign(FB, authM, fsM);
+  FB.app = appM.initializeApp(cfg);
+  FB.auth = authM.getAuth(FB.app);
+  try { FB.db = fsM.initializeFirestore(FB.app, {localCache: fsM.persistentLocalCache({tabManager: fsM.persistentMultipleTabManager()})}); }
+  catch(e){ FB.db = fsM.getFirestore(FB.app); }
+  try { await authM.getRedirectResult(FB.auth); } catch(e) { $("#a-err").textContent = authErr(e); }
+  authM.onAuthStateChanged(FB.auth, u => {
+    stopSubs(); closeSheet(); closeReport();
+    USER = u || null;
+    if (!USER){ showScreen("auth"); setAuthMode(authMode); return; }
+    showScreen("app"); startSubs();
+  });
+}
+$("#g-btn").addEventListener("click", googleSignIn);
+$("#af").addEventListener("submit", e => { e.preventDefault(); emailSubmit(); });
+$("#a-mode").addEventListener("click", () => setAuthMode(authMode === "in" ? "up" : "in"));
+$("#a-reset").addEventListener("click", resetPassword);
+
+/* ---------- render ---------- */
+function ready(){ return S.got.houses && S.got.receipts && S.got.payments; }
+function render(){
+  if (!ready()) return;
+  if (S.firstRender){
+    S.firstRender = false;
+    const last = lsGet("xh-last-house-" + (USER ? USER.uid : ""));
+    if (last && S.houses.has(last)){ S.view = "house"; S.hid = last; }
+    else if (S.houses.size === 1){ S.view = "house"; S.hid = [...S.houses.keys()][0]; }
+  }
+  if (S.view === "house" && !S.houses.has(S.hid)){ S.view = "home"; S.hid = null; }
+  const ae = document.activeElement;
+  if (S.view === "house" && S.tab === "info" && ae && ae.tagName === "INPUT" && $("#main").contains(ae)) return;
+  if (S.view === "home") renderHome(); else renderHouse();
+}
+
+function renderHome(){
+  $("#bar").innerHTML = `<h1>خەرجی خانووەکان<small>پسوولە، پارەی وەرگیراو و ڕاپۆرت</small></h1>`;
+  const hs = houseList();
+  let html = accountCard() + `<div class="sec-h"><h2>خانووەکان</h2><span class="note">${hs.length ? ku(hs.length) + " خانوو" : ""}</span></div>`;
+  if (!hs.length) html += `<div class="empty">هێشتا هیچ خانوویەک زیاد نەکراوە.<br>دوگمەی «خانووی نوێ» لە خوارەوە دابگرە.</div>`;
+  hs.forEach(h => {
+    const t = totals(h.id);
+    const pill = t.debt > 0 ? `<span class="pill bad">قەرز ${fmtU(t.debt)}</span>` : `<span class="pill good">ماوە ${fmtU(t.remain)}</span>`;
+    html += `<button class="hcard" data-act="open-house" data-id="${esc(h.id)}">
+      <span class="hcard-top"><span class="hcard-t">خانووی ژمارە ${esc(h.number)}</span>${pill}</span>
+      <span class="hcard-m"><span>پسوولە: <b class="num">${t.rs.length}</b></span><span>کۆی خەرجی: <b class="num">${fmtU(t.total)}</b></span><span>وەرگیراو: <b class="num">${fmtU(t.recv)}</b></span></span>
+      ${h.supervisor ? `<span class="hcard-m"><span>سەرپەرشتیار: ${esc(h.supervisor)}</span></span>` : ""}
+    </button>`;
+  });
+  $("#main").innerHTML = html;
+  $("#act-in").innerHTML = S.readOnly ? "" : `<button class="btn primary wide" data-act="new-house">${ICON.plus} خانووی نوێ</button>`;
+  $("#act").style.display = S.readOnly ? "none" : "";
+}
+
+function accountCard(){
+  if (!USER) return "";
+  const name = USER.displayName || (USER.email ? USER.email.split("@")[0] : "هەژماری تۆ");
+  const pic = USER.photoURL ? `<img src="${esc(USER.photoURL)}" alt="" referrerpolicy="no-referrer">` : `<span class="avatar">${esc(name.trim().charAt(0).toUpperCase() || "؟")}</span>`;
+  return `<div class="acct">${pic}
+    <div class="acct-t"><b>${esc(name)}</b>${USER.email ? `<span class="num" style="text-align:right">${esc(USER.email)}</span>` : ""}<span>داتاکانت تەنها بۆ ئەم هەژمارە پاشەکەوت دەکرێن.</span></div>
+    <button class="btn ghost small" data-act="signout">دەرچوون</button></div>`;
+}
+function renderHouse(){
+  const t = totals(S.hid), h = t.h;
+  $("#bar").innerHTML = `<button class="icon-btn" data-act="home" aria-label="گەڕانەوە بۆ خانووەکان">${ICON.back}</button>
+    <h1>خانووی ژمارە ${esc(h.number)}<small>${t.rs.length ? ku(t.rs.length) + " پسوولە، " + ku(Math.max(1, t.lists.length)) + " لیست" : "هیچ پسوولەیەک نییە"}</small></h1>
+    <button class="pdf-btn" data-act="report">${ICON.print} پرێنت / PDF</button>`;
+  const third = t.debt > 0 ? `<div class="kpi bad"><b>قەرز</b><span class="num">${fmtU(t.debt)}</span></div>` : `<div class="kpi good"><b>ماوە</b><span class="num">${fmtU(t.remain)}</span></div>`;
+  const tabs = [["receipts","پسوولەکان"],["payments","پارەی وەرگیراو"],["summary","کۆی گشتی"],["info","زانیاری"]];
+  let html = `<div class="kpis"><div class="kpi"><b>کۆی خەرجی</b><span class="num">${fmtU(t.total)}</span></div><div class="kpi"><b>وەرگیراو</b><span class="num">${fmtU(t.recv)}</span></div>${third}</div>
+  <div class="tabs" role="tablist">${tabs.map(([k, l]) => `<button class="tab" role="tab" aria-selected="${S.tab === k}" data-act="tab" data-tab="${k}">${l}</button>`).join("")}</div>`;
+  if (S.tab === "receipts") html += viewReceipts(t);
+  else if (S.tab === "payments") html += viewPayments(t);
+  else if (S.tab === "summary") html += viewSummary(t);
+  else html += viewInfo(t);
+  $("#main").innerHTML = html;
+  let act = "";
+  if (S.readOnly) act = S.tab === "summary" ? `<button class="btn primary wide" data-act="report">${ICON.print} پرێنت / PDF</button>` : "";
+  else if (S.tab === "receipts") act = `<button class="btn primary wide" data-act="new-receipt">${ICON.plus} پسوولەی نوێ</button>`;
+  else if (S.tab === "payments") act = `<button class="btn primary wide" data-act="new-payment">${ICON.plus} پارەی وەرگیراوی نوێ</button>`;
+  else if (S.tab === "summary") act = `<button class="btn primary wide" data-act="report">${ICON.print} پرێنت / PDF</button>`;
+  $("#act-in").innerHTML = act;
+  $("#act").style.display = act ? "" : "none";
+}
+
+function amountHTML(r){
+  const parts = [];
+  if (+r.iqd) parts.push(`<span class="num">${fmtI(r.iqd)}</span> <i>دینار</i>`);
+  if (+r.usd) parts.push(`<span class="num">${fmtU(r.usd)}</span>`);
+  return parts.join("<br>") || "—";
+}
+function viewReceipts(t){
+  if (!t.rs.length) return `<div class="empty">هێشتا هیچ پسوولەیەک نییە.<br>دوگمەی «پسوولەی نوێ» لە خوارەوە دابگرە و یەک لە دوای یەک بیانووسە.</div>`;
+  const last = t.lists.length - 1;
+  return t.lists.map((l, i) => {
+    const key = S.hid + ":" + i;
+    const open = S.listOpen.has(key) ? S.listOpen.get(key) : i === last;
+    const sI = sum(l, r => r.iqd), sU = sum(l, r => r.usd);
+    const rows = open ? `<ol class="rows">${l.map((r, j) => `<li><button class="rc" data-act="edit-receipt" data-id="${esc(r.id)}">
+        <span class="rc-n num">${j + 1}</span>
+        <span class="rc-main"><span class="rc-d">${esc(r.details) || "بێ وردەکاری"}</span><span class="rc-m">${[r.date ? `<span class="num">${fmtD(r.date)}</span>` : "", r.no ? `پسوولە <span class="num">${esc(r.no)}</span>` : ""].filter(Boolean).join(" · ") || "&nbsp;"}</span></span>
+        <span class="rc-a ${+r.usd && !+r.iqd ? "usd" : ""}">${amountHTML(r)}</span></button></li>`).join("")}</ol>` : "";
+    return `<section class="list ${open ? "open" : ""}">
+      <button class="list-h" data-act="toggle-list" data-k="${esc(key)}" data-open="${open ? 1 : 0}" aria-expanded="${open}">
+        <span class="list-t">لیستی ${ku(i + 1)}</span><span class="chip ${l.length === 25 ? "full" : ""}">${ku(l.length)} / ٢٥</span>
+        <span class="list-sum"><span class="num">${fmtI(sI)}</span> <i>دینار</i><br><span class="num">${fmtU(sU)}</span></span>${ICON.chev}
+      </button>${rows}</section>`;
+  }).join("");
+}
+function viewPayments(t){
+  let html = "";
+  if (!t.ps.length) html += `<div class="empty">هێشتا هیچ پارەیەک تۆمار نەکراوە.<br>هەر بڕە پارەیەک کە لە خاوەن خانوو وەردەگریت لێرە بینووسە.</div>`;
+  else html += `<section class="list open"><div class="list-h"><span class="list-t">پارە وەرگیراوەکان</span><span class="list-sum">کۆ: <span class="num">${fmtU(t.recv)}</span></span></div>
+    <ol class="rows">${t.ps.map((p, j) => `<li><button class="rc" data-act="edit-payment" data-id="${esc(p.id)}"><span class="rc-n num">${j + 1}</span>
+      <span class="rc-main"><span class="rc-d">${esc(p.note) || "پارەی وەرگیراو"}</span><span class="rc-m">${p.date ? `<span class="num">${fmtD(p.date)}</span>` : "&nbsp;"}</span></span>
+      <span class="rc-a ${+p.usd && !+p.iqd ? "usd" : ""}">${amountHTML(p)}</span></button></li>`).join("")}</ol></section>`;
+  return html;
+}
+function viewSummary(t){
+  const n = Math.max(1, t.lists.length);
+  let rows = "";
+  for (let i = 0; i < n; i++){
+    const l = t.lists[i] || [];
+    rows += `<tr><td>لیستی ${ku(i + 1)}</td><td class="n num">${l.length}</td><td class="n num">${fmtI(sum(l, r => r.iqd))}</td><td class="n num">${fmtU(sum(l, r => r.usd))}</td></tr>`;
+  }
+  return `<section class="panel"><h3>خەرجی هەر لیستێک</h3><div class="tbl-wrap"><table class="t">
+      <thead><tr><th>لیست</th><th class="n">ڕیز</th><th class="n">دینار</th><th class="n">دۆلار</th></tr></thead>
+      <tbody>${rows}</tbody>
+      <tfoot><tr><td>کۆ</td><td class="n num">${t.rs.length}</td><td class="n num">${fmtI(t.iqd)}</td><td class="n num">${fmtU(t.usd)}</td></tr></tfoot>
+    </table></div></section>
+    <section class="panel"><h3>حیسابی کۆتایی بە دۆلار</h3><div class="calc">
+      <div><span>دینار گۆڕاو بۆ دۆلار</span><b class="num">${fmtU(t.iqdUsd)}</b></div>
+      <div><span>خەرجی بە دۆلار</span><b class="num">${fmtU(t.usd)}</b></div>
+      <div class="big"><span>کۆی گشتی خەرجی</span><b class="num">${fmtU(t.total)}</b></div>
+      <div><span>بڕی پارەی وەرگیراو</span><b class="num">${fmtU(t.recv)}</b></div>
+      <div><span>کۆی گشتی دراو</span><b class="num">${fmtU(t.paid)}</b></div>
+      <div class="good"><span>ماوە</span><b class="num">${fmtU(t.remain)}</b></div>
+      <div class="bad"><span>قەرز</span><b class="num">${fmtU(t.debt)}</b></div>
+    </div>
+    <p class="note">نرخی گۆڕینەوە: ١ دۆلار = <span class="num">${t.rate ? fmtI(t.rate) : "—"}</span> دینار. لە بەشی «زانیاری» دەیگۆڕیت.</p></section>`;
+}
+function viewInfo(t){
+  const h = t.h;
+  return accountCard() + `<section class="panel"><h3>زانیاری خانوو</h3>
+    <div class="field"><label for="i-num">ژمارەی خانوو</label><input id="i-num" value="${esc(h.number)}" inputmode="numeric"></div>
+    <div class="field"><label for="i-rate">نرخی ١ دۆلار بە دینار</label><input id="i-rate" class="ltr" value="${esc(h.rate ?? "")}" inputmode="decimal"></div>
+    <div class="field"><label for="i-sup">سەرپەرشتیکاری پڕۆژە</label><input id="i-sup" value="${esc(h.supervisor)}"></div>
+    <div class="field"><label for="i-man">ب. کارگێڕی / ڕێگەپێدراو</label><input id="i-man" value="${esc(h.manager)}"></div>
+    <div class="err" id="i-err"></div>
+    <div class="row-btns"><button class="btn primary wide" data-act="save-info">پاشەکەوتکردن</button></div>
+  </section>
+  <section class="panel"><h3>سڕینەوەی خانوو</h3><p class="note">ئەم خانووە و هەموو پسوولە و پارە وەرگیراوەکانی دەسڕێنەوە و ناگەڕێنەوە.</p>
+    <div class="row-btns"><button class="btn danger" data-act="delete-house">سڕینەوەی خانووی ${esc(h.number)}</button></div></section>`;
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html){ $("#sheet").innerHTML = `<div class="grab"></div>` + html; $("#backdrop").classList.add("show"); }
+function closeSheet(){ $("#backdrop").classList.remove("show"); $("#sheet").innerHTML = ""; }
+let toastT = null;
+function toast(msg){ const el = $("#toast"); el.textContent = msg; el.classList.add("show"); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove("show"), 2200); }
+function sheetHead(title, sub){ return `<div class="sheet-h"><h3>${title}${sub ? `<small>${sub}</small>` : ""}</h3><button class="icon-btn" data-act="close" aria-label="داخستن">${ICON.x}</button></div>`; }
+function seg(id, cur){ return `<div class="seg" id="${id}" role="group" aria-label="دراو"><button type="button" data-cur="iqd" aria-pressed="${cur === "iqd"}">دینار</button><button type="button" data-cur="usd" aria-pressed="${cur === "usd"}">دۆلار $</button></div>`; }
+function segVal(id){ const b = $(`#${id} [aria-pressed="true"]`); return b ? b.dataset.cur : "iqd"; }
+
+function detailSuggestions(){
+  const count = new Map();
+  S.receipts.forEach(r => { const d = (r.details || "").trim(); if (d) count.set(d, (count.get(d) || 0) + 1); });
+  const used = [...count.entries()].sort((a, b) => b[1] - a[1]).map(x => x[0]);
+  const all = [...used]; DEFAULT_DETAILS.forEach(d => { if (!all.includes(d)) all.push(d); });
+  return all;
+}
+
+let form = null;
+function receiptSheet(rid){
+  const t = totals(S.hid);
+  const r = rid ? {id: rid, ...S.receipts.get(rid)} : null;
+  const idx = r ? t.rs.findIndex(x => x.id === rid) : t.rs.length;
+  form = {kind: "receipt", rid, seq: r ? r.seq : null};
+  const cur = r ? (+r.usd && !+r.iqd ? "usd" : "iqd") : S.lastCur;
+  const amt = r ? (cur === "usd" ? r.usd : r.iqd) : "";
+  const sugg = detailSuggestions();
+  openSheet(`${sheetHead(r ? "گۆڕینی پسوولە" : "پسوولەی نوێ", `<span id="pos">${posText(idx)}</span>`)}
+    <form id="f" novalidate autocomplete="off">
+      <div class="two">
+        <div class="field"><label for="f-date">بەروار</label><input id="f-date" type="date" value="${esc(r ? r.date : (S.lastDate || todayISO()))}"></div>
+        <div class="field"><label for="f-no">ژمارەی پسوولە</label><input id="f-no" class="ltr" inputmode="numeric" value="${esc(r ? r.no : "")}"></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label for="f-det">وردەکاری</label><input id="f-det" list="det-list" value="${esc(r ? r.details : "")}" placeholder="بۆ نموونە: کرێی کرێکار">
+        <datalist id="det-list">${sugg.map(d => `<option value="${esc(d)}"></option>`).join("")}</datalist></div>
+      <div class="chips" style="margin-top:8px">${sugg.slice(0, 6).map(d => `<button type="button" data-act="chip" data-v="${esc(d)}">${esc(d)}</button>`).join("")}</div>
+      <div class="two" style="margin-top:12px">
+        <div class="field"><label for="f-amt">بڕی پارە</label><input id="f-amt" class="ltr" inputmode="decimal" value="${esc(amt || "")}" placeholder="0"></div>
+        <div class="field"><label>دراو</label>${seg("f-cur", cur)}</div>
+      </div>
+      <div class="hint" id="f-hint"></div>
+      <div class="err" id="f-err"></div>
+      <div class="row-btns">
+        ${r ? `<button type="submit" class="btn primary wide" data-mode="close">پاشەکەوتکردنی گۆڕانکاری</button><button type="button" class="btn danger" data-act="delete-receipt">سڕینەوە</button>`
+            : `<button type="submit" class="btn primary wide" data-mode="next">پاشەکەوت و دانەی دواتر</button><button type="submit" class="btn" data-mode="close">پاشەکەوت و داخستن</button>`}
+      </div>
+    </form>`);
+  amtHint();
+  if (!r) setTimeout(() => { const el = $("#f-no"); if (el) el.focus(); }, 60);
+}
+function posText(idx){ return `ڕیزی ${ku((idx % 25) + 1)} لە لیستی ${ku(Math.floor(idx / 25) + 1)}`; }
+function amtHint(){
+  const a = $("#f-amt") || $("#p-amt"); if (!a) return;
+  const v = parseNum(a.value), cur = segVal(a.id === "p-amt" ? "p-cur" : "f-cur");
+  const hint = a.id === "p-amt" ? $("#p-hint") : $("#f-hint");
+  hint.textContent = isNaN(v) || !v ? "" : (cur === "usd" ? fmtU(v) : fmtI(v) + " دینار");
+}
+async function saveReceipt(mode){
+  const t = totals(S.hid);
+  const amt = parseNum($("#f-amt").value), cur = segVal("f-cur");
+  const det = $("#f-det").value.trim(), no = latin($("#f-no").value), date = $("#f-date").value;
+  if (isNaN(amt) || amt <= 0){ $("#f-err").textContent = "بڕی پارە بنووسە."; $("#f-amt").focus(); return; }
+  if (!det && !no){ $("#f-err").textContent = "وردەکاری یان ژمارەی پسوولە بنووسە."; $("#f-det").focus(); return; }
+  $("#f-err").textContent = "";
+  const id = form.rid || uid("r");
+  const data = {house: S.hid, seq: form.seq || Date.now(), date, no, details: det, iqd: cur === "iqd" ? amt : 0, usd: cur === "usd" ? amt : 0, updatedAt: Date.now()};
+  const idx = form.rid ? t.rs.findIndex(x => x.id === form.rid) : t.rs.length;
+  const btns = [...document.querySelectorAll("#f button")]; btns.forEach(b => b.disabled = true);
+  try { await put("receipts", id, data); }
+  catch(e){ $("#f-err").textContent = errText(e); btns.forEach(b => b.disabled = false); return; }
+  S.lastDate = date; S.lastCur = cur;
+  toast(`پاشەکەوت کرا، ${posText(idx)}`);
+  if (mode === "next"){
+    btns.forEach(b => b.disabled = false);
+    form = {kind: "receipt", rid: null, seq: null};
+    $("#f-no").value = ""; $("#f-det").value = ""; $("#f-amt").value = ""; amtHint();
+    $("#pos").textContent = posText(idx + 1);
+    $("#f-no").focus();
+  } else closeSheet();
+}
+
+function paymentSheet(pid){
+  const p = pid ? {id: pid, ...S.payments.get(pid)} : null;
+  form = {kind: "payment", pid, seq: p ? p.seq : null};
+  const cur = p ? (+p.iqd && !+p.usd ? "iqd" : "usd") : "usd";
+  const amt = p ? (cur === "usd" ? p.usd : p.iqd) : "";
+  openSheet(`${sheetHead(p ? "گۆڕینی پارەی وەرگیراو" : "پارەی وەرگیراوی نوێ", "ئەو پارەیەی لە خاوەن خانوو وەرت گرتووە")}
+    <form id="pf" novalidate autocomplete="off">
+      <div class="two">
+        <div class="field"><label for="p-date">بەروار</label><input id="p-date" type="date" value="${esc(p ? p.date : todayISO())}"></div>
+        <div class="field"><label>دراو</label>${seg("p-cur", cur)}</div>
+      </div>
+      <div class="field" style="margin-top:12px"><label for="p-amt">بڕی پارە</label><input id="p-amt" class="ltr" inputmode="decimal" value="${esc(amt || "")}" placeholder="0"></div>
+      <div class="field" style="margin-top:12px"><label for="p-note">تێبینی</label><input id="p-note" value="${esc(p ? p.note : "")}" placeholder="بۆ نموونە: قیستی یەکەم"></div>
+      <div class="hint" id="p-hint"></div>
+      <div class="err" id="p-err"></div>
+      <div class="row-btns">
+        <button type="submit" class="btn primary wide">پاشەکەوتکردن</button>
+        ${p ? `<button type="button" class="btn danger" data-act="delete-payment">سڕینەوە</button>` : ""}
+      </div>
+    </form>`);
+  const a = $("#p-amt"); if (a){ a.addEventListener("input", amtHint); }
+}
+async function savePayment(){
+  const amt = parseNum($("#p-amt").value), cur = segVal("p-cur");
+  if (isNaN(amt) || amt <= 0){ $("#p-err").textContent = "بڕی پارە بنووسە."; $("#p-amt").focus(); return; }
+  const id = form.pid || uid("p");
+  const data = {house: S.hid, seq: form.seq || Date.now(), date: $("#p-date").value, note: $("#p-note").value.trim(), iqd: cur === "iqd" ? amt : 0, usd: cur === "usd" ? amt : 0, updatedAt: Date.now()};
+  const btns = [...document.querySelectorAll("#pf button")]; btns.forEach(b => b.disabled = true);
+  try { await put("payments", id, data); }
+  catch(e){ $("#p-err").textContent = errText(e); btns.forEach(b => b.disabled = false); return; }
+  toast("پارەکە پاشەکەوت کرا"); closeSheet();
+}
+
+function houseSheet(){
+  const last = houseList().slice(-1)[0] || {};
+  form = {kind: "house"};
+  openSheet(`${sheetHead("خانووی نوێ", "دواتر دەتوانیت ئەمانە بگۆڕیت")}
+    <form id="hf" novalidate autocomplete="off">
+      <div class="two">
+        <div class="field"><label for="h-num">ژمارەی خانوو</label><input id="h-num" inputmode="numeric"></div>
+        <div class="field"><label for="h-rate">نرخی ١ دۆلار بە دینار</label><input id="h-rate" class="ltr" inputmode="decimal" value="${esc(last.rate || 1535)}"></div>
+      </div>
+      <div class="field" style="margin-top:12px"><label for="h-sup">سەرپەرشتیکاری پڕۆژە</label><input id="h-sup" value="${esc(last.supervisor || "")}"></div>
+      <div class="field" style="margin-top:12px"><label for="h-man">ب. کارگێڕی / ڕێگەپێدراو</label><input id="h-man" value="${esc(last.manager || "")}"></div>
+      <div class="err" id="h-err"></div>
+      <div class="row-btns"><button type="submit" class="btn primary wide">زیادکردنی خانوو</button></div>
+    </form>`);
+  setTimeout(() => { const el = $("#h-num"); if (el) el.focus(); }, 60);
+}
+async function saveHouse(){
+  const num = latin($("#h-num").value), rate = parseNum($("#h-rate").value);
+  if (!num){ $("#h-err").textContent = "ژمارەی خانوو بنووسە."; return; }
+  if (isNaN(rate) || rate <= 0){ $("#h-err").textContent = "نرخی دۆلار بنووسە، بۆ نموونە 1535."; return; }
+  const id = uid("h");
+  const btn = $("#hf button[type=submit]"); btn.disabled = true;
+  try { await put("houses", id, {number: num, rate, supervisor: $("#h-sup").value.trim(), manager: $("#h-man").value.trim(), createdAt: Date.now()}); }
+  catch(e){ $("#h-err").textContent = errText(e); btn.disabled = false; return; }
+  closeSheet(); openHouse(id); toast("خانووەکە زیاد کرا");
+}
+async function saveInfo(){
+  const h = S.houses.get(S.hid); if (!h) return;
+  const num = latin($("#i-num").value), rate = parseNum($("#i-rate").value);
+  if (!num){ $("#i-err").textContent = "ژمارەی خانوو بنووسە."; return; }
+  if (isNaN(rate) || rate <= 0){ $("#i-err").textContent = "نرخی دۆلار بنووسە، بۆ نموونە 1535."; return; }
+  const data = {...h, number: num, rate, supervisor: $("#i-sup").value.trim(), manager: $("#i-man").value.trim()};
+  try { await put("houses", S.hid, data); toast("زانیارییەکان پاشەکەوت کران"); }
+  catch(e){ $("#i-err").textContent = errText(e); }
+}
+function confirmSheet(title, body, okLabel, onOk){
+  form = {kind: "confirm", onOk};
+  openSheet(`${sheetHead(title)}<p class="note" style="font-size:14.5px">${body}</p><div class="err" id="c-err"></div>
+    <div class="row-btns"><button class="btn danger wide" data-act="confirm-ok">${okLabel}</button><button class="btn ghost" data-act="close">پاشگەزبوونەوە</button></div>`);
+}
+
+function openHouse(id){ S.view = "house"; S.hid = id; S.tab = "receipts"; lsSet("xh-last-house-" + USER.uid, id); render(); window.scrollTo(0, 0); }
+
+/* ---------- events ---------- */
+document.addEventListener("click", async e => {
+  const el = e.target.closest("[data-act]"); if (!el) return;
+  const a = el.dataset.act;
+  if (S.readOnly && /^(new-|edit-|save-|delete-)/.test(a)){ toast("تەنها دەتوانیت سەیری بکەیت، گۆڕانکاری ناکرێت"); return; }
+  if (a === "open-house") openHouse(el.dataset.id);
+  else if (a === "home"){ S.view = "home"; S.hid = null; lsSet("xh-last-house-" + USER.uid, ""); render(); window.scrollTo(0, 0); }
+  else if (a === "tab"){ S.tab = el.dataset.tab; render(); }
+  else if (a === "toggle-list"){ S.listOpen.set(el.dataset.k, el.dataset.open !== "1"); render(); }
+  else if (a === "new-house") houseSheet();
+  else if (a === "new-receipt") receiptSheet(null);
+  else if (a === "edit-receipt") receiptSheet(el.dataset.id);
+  else if (a === "new-payment") paymentSheet(null);
+  else if (a === "edit-payment") paymentSheet(el.dataset.id);
+  else if (a === "close") closeSheet();
+  else if (a === "chip"){ const d = $("#f-det"); if (d){ d.value = el.dataset.v; $("#f-amt").focus(); } }
+  else if (a === "save-info") saveInfo();
+  else if (a === "delete-receipt"){
+    const rid = form.rid;
+    confirmSheet("سڕینەوەی پسوولە", "ئەم پسوولەیە دەسڕێتەوە و ڕیزەکانی دواتر یەک پلە دێنە سەرەوە.", "بەڵێ، بیسڕەوە", async () => { await del("receipts", rid); closeSheet(); toast("پسوولەکە سڕایەوە"); });
+  }
+  else if (a === "delete-payment"){
+    const pid = form.pid;
+    confirmSheet("سڕینەوەی پارەی وەرگیراو", "ئەم تۆمارە دەسڕێتەوە.", "بەڵێ، بیسڕەوە", async () => { await del("payments", pid); closeSheet(); toast("سڕایەوە"); });
+  }
+  else if (a === "delete-house"){
+    const hid = S.hid, h = S.houses.get(hid) || {}, t = totals(hid);
+    confirmSheet(`سڕینەوەی خانووی ${esc(h.number)}`, `خانووەکە لەگەڵ ${ku(t.rs.length)} پسوولە و ${ku(t.ps.length)} پارەی وەرگیراو دەسڕێنەوە.`, "بەڵێ، هەمووی بسڕەوە", async () => {
+      for (const r of t.rs) await del("receipts", r.id);
+      for (const p of t.ps) await del("payments", p.id);
+      await del("houses", hid);
+      closeSheet(); S.view = "home"; S.hid = null; lsSet("xh-last-house-" + USER.uid, ""); render(); toast("خانووەکە سڕایەوە");
+    });
+  }
+  else if (a === "confirm-ok"){
+    el.disabled = true;
+    try { await form.onOk(); } catch(err){ $("#c-err").textContent = errText(err); el.disabled = false; }
+  }
+  else if (a === "report") openReport();
+  else if (a === "report-close") closeReport();
+  else if (a === "download") downloadPdf();
+  else if (a === "print") printReport();
+  else if (a === "share") sharePdf();
+  else if (a === "signout") confirmSheet("دەرچوون", "دەتەوێت لە هەژمارەکەت بچیتە دەرەوە؟ داتاکانت پاشەکەوت کراون و دوای چوونەژوورەوە دەگەڕێنەوە.", "بەڵێ، دەرچوون", async () => { closeSheet(); await FB.signOut(FB.auth); });
+});
+document.addEventListener("click", e => {
+  const b = e.target.closest(".seg button"); if (!b) return;
+  b.parentElement.querySelectorAll("button").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
+  amtHint();
+});
+document.addEventListener("input", e => { if (e.target.id === "f-amt" || e.target.id === "p-amt") amtHint(); });
+document.addEventListener("submit", e => {
+  e.preventDefault();
+  const f = e.target;
+  if (f.id === "f") saveReceipt((e.submitter && e.submitter.dataset.mode) || "next");
+  else if (f.id === "pf") savePayment();
+  else if (f.id === "hf") saveHouse();
+});
+$("#backdrop").addEventListener("click", e => { if (e.target.id === "backdrop") closeSheet(); });
+document.addEventListener("keydown", e => {
+  if (e.key === "Escape"){ if ($("#backdrop").classList.contains("show")) closeSheet(); else if ($("#report").classList.contains("show")) closeReport(); }
+});
+
+/* ---------- report: drawn on canvas, packed into a PDF ---------- */
+const A4W = 595.28, A4H = 841.89, SCALE = 2.5;
+const RF = '"Noto Sans Arabic","Noto Kufi Arabic",Tahoma,"Segoe UI",sans-serif';
+const COLOR = {title:"#FFE699", subject:"#B4C6E7", expense:"#FFF2CC", head:"#E4E9EF", alt:"#F3F4F6", total:"#FCE4D6", line:"#7d8794", good:"#E2F0D9", bad:"#F8D7D3"};
+async function loadFonts(){
+  if (!document.fonts || !document.fonts.load) return;
+  const sample = "لیستی پسوولە کۆی گشتی ڕێگەپێدراو 0123456789$,.";
+  const jobs = ["400","700"].map(w => document.fonts.load(`${w} 12px "Noto Sans Arabic"`, sample));
+  await Promise.race([Promise.all(jobs).catch(() => {}), new Promise(r => setTimeout(r, 4000))]);
+}
+function newPage(){
+  const c = document.createElement("canvas");
+  c.width = Math.round(A4W * SCALE); c.height = Math.round(A4H * SCALE); c.setAttribute("dir", "rtl");
+  const g = c.getContext("2d"); g.scale(SCALE, SCALE);
+  g.fillStyle = "#ffffff"; g.fillRect(0, 0, A4W, A4H);
+  g.lineWidth = 0.6; g.strokeStyle = COLOR.line;
+  return {c, g};
+}
+function txt(g, s, cx, cy, o = {}){
+  s = String(s ?? ""); if (!s) return;
+  let size = o.size || 9;
+  const setF = () => { g.font = `${o.bold ? 700 : 400} ${size}px ${RF}`; };
+  g.textAlign = o.align || "center"; g.textBaseline = "middle";
+  try { g.direction = o.ltr ? "ltr" : "rtl"; } catch(e) {}
+  g.fillStyle = o.color || "#111111"; setF();
+  if (o.maxW){
+    while (g.measureText(s).width > o.maxW && size > 6.5){ size -= 0.5; setF(); }
+    if (g.measureText(s).width > o.maxW){ while (s.length > 1 && g.measureText(s + "…").width > o.maxW) s = s.slice(0, -1); s += "…"; }
+  }
+  g.fillText(s, cx, cy + 0.7);
+}
+function box(g, x, y, w, h, fill){ if (fill){ g.fillStyle = fill; g.fillRect(x, y, w, h); } g.strokeStyle = COLOR.line; g.strokeRect(x, y, w, h); }
+function cols(right, widths){ let r = right; return widths.map(w => { const x = r - w; r = x; return {x, w, c: x + w / 2}; }); }
+function span(C, a, b){ const x = Math.min(C[a].x, C[b].x), r = Math.max(C[a].x + C[a].w, C[b].x + C[b].w); return {x, w: r - x, c: (x + r) / 2}; }
+function sig(g, cx, y, label, name){
+  txt(g, label, cx, y, {size: 10.5, bold: true});
+  txt(g, name || "", cx, y + 18, {size: 10});
+  g.save(); g.setLineDash([2, 2]); g.strokeStyle = "#9aa3ad"; g.beginPath(); g.moveTo(cx - 72, y + 44); g.lineTo(cx + 72, y + 44); g.stroke(); g.restore();
+}
+function pageFoot(g, h, label, p, n){
+  const L = 40, R = A4W - 40;
+  g.save(); g.strokeStyle = "#c9d0d7"; g.beginPath(); g.moveTo(L, 806); g.lineTo(R, 806); g.stroke(); g.restore();
+  txt(g, `خانووی ژمارە ${h.number || ""} · ${label}`, R, 818, {size: 8, color: "#6b7783", align: "right"});
+  txt(g, `لاپەڕە ${ku(p)} لە ${ku(n)} · ${fmtD(todayISO())}`, L, 818, {size: 8, color: "#6b7783", align: "left"});
+}
+function infoRow(g, C, y, h, a, b){
+  const left = C[C.length - 1], right = C[0];
+  // a: index range for house no. (right side), subject cell, expense cell
+  const H = 20;
+  const hs = span(C, a[0], a[1]); box(g, hs.x, y, hs.w, H, "#ffffff"); txt(g, `خانووی ژمارە: ${h.number || ""}`, hs.c, y + H / 2, {size: 10, bold: true, maxW: hs.w - 6});
+  const ss = span(C, b[0], b[1]); box(g, ss.x, y, ss.w, H, COLOR.subject); txt(g, "بابەت", ss.c, y + H / 2, {size: 10, bold: true});
+  const es = span(C, b[1] + 1, C.length - 1); box(g, es.x, y, es.w, H, COLOR.expense); txt(g, "خەرجی", es.c, y + H / 2, {size: 10, bold: true});
+  return H;
+}
+function drawList(h, t, li, p, n){
+  const {c, g} = newPage();
+  const L = 40, R = A4W - 40, W = R - L;
+  const rows = t.lists[li] || [];
+  let y = 46;
+  box(g, L, y, W, 26, COLOR.title); txt(g, `لیستی پسوولە و وردەکاری ژمارە ${ku(li + 1)}`, L + W / 2, y + 13, {size: 13, bold: true}); y += 26;
+  const C = cols(R, [32, 72, 66, 185.28, 80, 80]);
+  y += infoRow(g, C, y, h, [0, 2], [3, 3]);
+  ["ڕیز", "بەروار", "ژ. پسوولە", "وردەکاری", "دینار", "دۆلار"].forEach((s, i) => { box(g, C[i].x, y, C[i].w, 19, COLOR.head); txt(g, s, C[i].c, y + 9.5, {size: 9.5, bold: true}); });
+  y += 19;
+  const RH = 21;
+  for (let i = 0; i < 25; i++){
+    const r = rows[i], fill = i % 2 ? COLOR.alt : "#ffffff";
+    C.forEach(k => box(g, k.x, y, k.w, RH, fill));
+    txt(g, String(i + 1), C[0].c, y + RH / 2, {size: 9, bold: true, ltr: true, color: "#333"});
+    if (r){
+      txt(g, fmtD(r.date), C[1].c, y + RH / 2, {size: 8.8, ltr: true, maxW: C[1].w - 4});
+      txt(g, r.no || "", C[2].c, y + RH / 2, {size: 8.8, ltr: true, maxW: C[2].w - 4});
+      txt(g, r.details || "", C[3].c, y + RH / 2, {size: 9.5, maxW: C[3].w - 8});
+      if (+r.iqd) txt(g, fmtI(r.iqd), C[4].c, y + RH / 2, {size: 9.5, bold: true, ltr: true, maxW: C[4].w - 4});
+      if (+r.usd) txt(g, fmtU(r.usd), C[5].c, y + RH / 2, {size: 9.5, bold: true, ltr: true, maxW: C[5].w - 4});
+    }
+    y += RH;
+  }
+  const fs = span(C, 0, 3); box(g, fs.x, y, fs.w, 22, COLOR.total); txt(g, "مجموع دۆلار + دینار", fs.c, y + 11, {size: 10.5, bold: true});
+  box(g, C[4].x, y, C[4].w, 22, COLOR.total); txt(g, fmtI(sum(rows, r => r.iqd)), C[4].c, y + 11, {size: 10, bold: true, ltr: true, maxW: C[4].w - 4});
+  box(g, C[5].x, y, C[5].w, 22, COLOR.total); txt(g, fmtU(sum(rows, r => r.usd)), C[5].c, y + 11, {size: 10, bold: true, ltr: true, maxW: C[5].w - 4});
+  y += 22;
+  sig(g, R - 95, y + 44, "سەرپەرشتیکاری پڕۆژە", h.supervisor);
+  sig(g, L + 95, y + 44, "ب. کارگێڕی", h.manager);
+  pageFoot(g, h, `لیستی ${ku(li + 1)}`, p, n);
+  return c;
+}
+function drawSummary(h, t, p, n){
+  const {c, g} = newPage();
+  const L = 40, R = A4W - 40, W = R - L;
+  const nl = Math.max(1, t.lists.length);
+  let y = 46;
+  const nums = Array.from({length: nl}, (_, i) => ku(i + 1)).join("-");
+  box(g, L, y, W, 26, COLOR.title); txt(g, `کۆی گشتی خەرجییەکانی لیستی ژمارە ${nums}`, L + W / 2, y + 13, {size: 13, bold: true, maxW: W - 12}); y += 26;
+  const C = cols(R, [185.28, 70, 130, 130]);
+  y += infoRow(g, C, y, h, [0, 0], [1, 1]);
+  ["لیست", "ژمارەی ڕیز", "دینار", "دۆلار"].forEach((s, i) => { box(g, C[i].x, y, C[i].w, 19, COLOR.head); txt(g, s, C[i].c, y + 9.5, {size: 9.5, bold: true}); });
+  y += 19;
+  const shown = Math.max(5, t.lists.length);
+  const RH = shown > 12 ? 17 : 21;
+  for (let i = 0; i < shown; i++){
+    const l = t.lists[i], fill = i % 2 ? COLOR.alt : "#ffffff";
+    C.forEach(k => box(g, k.x, y, k.w, RH, fill));
+    txt(g, `ژمارە ${ku(i + 1)}`, C[0].c, y + RH / 2, {size: 9.5, bold: true});
+    if (l){
+      txt(g, String(l.length), C[1].c, y + RH / 2, {size: 9.5, ltr: true});
+      txt(g, fmtI(sum(l, r => r.iqd)), C[2].c, y + RH / 2, {size: 9.5, bold: true, ltr: true});
+      txt(g, fmtU(sum(l, r => r.usd)), C[3].c, y + RH / 2, {size: 9.5, bold: true, ltr: true});
+    }
+    y += RH;
+  }
+  [[C[0], "مجموع دۆلار + دینار", false], [C[1], String(t.rs.length), true], [C[2], fmtI(t.iqd), true], [C[3], fmtU(t.usd), true]].forEach(([k, s, ltr]) => {
+    box(g, k.x, y, k.w, 22, COLOR.total); txt(g, s, k.c, y + 11, {size: 10.5, bold: true, ltr});
+  });
+  y += 22 + 14;
+  // conversion
+  const lab = span(C, 0, 1);
+  box(g, lab.x, y, lab.w, 22, "#ffffff"); txt(g, `دینار گۆڕاو بۆ دۆلار (١ دۆلار = ${t.rate ? fmtI(t.rate) : "—"} دینار)`, lab.c, y + 11, {size: 9.5, maxW: lab.w - 8});
+  box(g, C[2].x, y, C[2].w, 22, "#ffffff"); txt(g, fmtI(t.iqd) + " IQD", C[2].c, y + 11, {size: 9.5, ltr: true});
+  box(g, C[3].x, y, C[3].w, 22, "#ffffff"); txt(g, fmtU(t.iqdUsd), C[3].c, y + 11, {size: 10, bold: true, ltr: true});
+  y += 22;
+  box(g, lab.x, y, lab.w, 24, COLOR.total); txt(g, "کۆی گشتی خەرجی بە دۆلار", lab.c, y + 12, {size: 10.5, bold: true});
+  const vs = span(C, 2, 3); box(g, vs.x, y, vs.w, 24, COLOR.total); txt(g, fmtU(t.total), vs.c, y + 12, {size: 12, bold: true, ltr: true});
+  y += 24 + 16;
+  // final account box (right half)
+  const bw = 300, bx = R - bw, lw = 170;
+  const lines = [["کۆی گشتی پارە (خەرجی)", fmtU(t.total), "#ffffff"], ["بڕی پارەی وەرگیراو", fmtU(t.recv), "#ffffff"], ["کۆی گشتی دراو", fmtU(t.paid), "#ffffff"], ["ماوە", fmtU(t.remain), COLOR.good], ["قەرز", fmtU(t.debt), COLOR.bad]];
+  lines.forEach(([l, v, f]) => {
+    box(g, R - lw, y, lw, 21, COLOR.head); txt(g, l, R - lw / 2, y + 10.5, {size: 10, bold: true});
+    box(g, bx, y, bw - lw, 21, f); txt(g, v, bx + (bw - lw) / 2, y + 10.5, {size: 10.5, bold: true, ltr: true});
+    y += 21;
+  });
+  y += 16;
+  // payments
+  if (t.ps.length){
+    const sigTop = 712;
+    const PC = cols(R, [32, 80, 243.28, 80, 80]);
+    txt(g, "پارە وەرگیراوەکان", R, y + 8, {size: 10.5, bold: true, align: "right"}); y += 18;
+    ["ڕیز", "بەروار", "تێبینی", "دینار", "دۆلار"].forEach((s, i) => { box(g, PC[i].x, y, PC[i].w, 18, COLOR.head); txt(g, s, PC[i].c, y + 9, {size: 9, bold: true}); });
+    y += 18;
+    const room = Math.max(1, Math.floor((sigTop - y - 18) / 18));
+    let list = t.ps.map((q, i) => ({...q, i: i + 1}));
+    let hidden = 0;
+    if (list.length > room){ hidden = list.length - (room - 1); list = list.slice(-(room - 1)); }
+    if (hidden){ const sp = span(PC, 0, 4); box(g, sp.x, y, sp.w, 18, "#ffffff"); txt(g, `+ ${ku(hidden)} تۆماری پێشتر (لە کۆکەدا هەژمار کراون)`, sp.c, y + 9, {size: 8.5, color: "#555"}); y += 18; }
+    list.forEach(q => {
+      PC.forEach(k => box(g, k.x, y, k.w, 18, "#ffffff"));
+      txt(g, String(q.i), PC[0].c, y + 9, {size: 8.8, ltr: true});
+      txt(g, fmtD(q.date), PC[1].c, y + 9, {size: 8.8, ltr: true});
+      txt(g, q.note || "پارەی وەرگیراو", PC[2].c, y + 9, {size: 9, maxW: PC[2].w - 8});
+      if (+q.iqd) txt(g, fmtI(q.iqd), PC[3].c, y + 9, {size: 9, bold: true, ltr: true});
+      if (+q.usd) txt(g, fmtU(q.usd), PC[4].c, y + 9, {size: 9, bold: true, ltr: true});
+      y += 18;
+    });
+  }
+  const sy = Math.max(y + 30, 722);
+  sig(g, R - 95, Math.min(sy, 740), "سەرپەرشتیکاری پڕۆژە", h.supervisor);
+  sig(g, L + 95, Math.min(sy, 740), "ب. ڕێگەپێدراو", h.manager);
+  pageFoot(g, h, "کۆی گشتی", p, n);
+  return c;
+}
+function toJpeg(c){ return new Promise((res, rej) => { try { c.toBlob(b => b ? res(b) : rej(new Error("toBlob")), "image/jpeg", 0.9); } catch(e){ rej(e); } }); }
+function buildPdf(pages){
+  const enc = new TextEncoder(); const parts = []; let off = 0; const offs = [];
+  const push = d => { const b = typeof d === "string" ? enc.encode(d) : d; parts.push(b); off += b.length; };
+  const obj = n => { offs[n] = off; push(`${n} 0 obj\n`); };
+  push(new Uint8Array([0x25,0x50,0x44,0x46,0x2D,0x31,0x2E,0x34,0x0A,0x25,0xE2,0xE3,0xCF,0xD3,0x0A]));
+  const n = pages.length;
+  obj(1); push("<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
+  obj(2); push(`<< /Type /Pages /Kids [${pages.map((_, i) => `${3 + 3 * i} 0 R`).join(" ")}] /Count ${n} >>\nendobj\n`);
+  pages.forEach((pg, i) => {
+    const P = 3 + 3 * i, CT = 4 + 3 * i, IM = 5 + 3 * i;
+    obj(P); push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${A4W} ${A4H}] /Resources << /XObject << /Im${i} ${IM} 0 R >> >> /Contents ${CT} 0 R >>\nendobj\n`);
+    const cs = `q ${A4W} 0 0 ${A4H} 0 0 cm /Im${i} Do Q`;
+    obj(CT); push(`<< /Length ${cs.length} >>\nstream\n${cs}\nendstream\nendobj\n`);
+    obj(IM); push(`<< /Type /XObject /Subtype /Image /Width ${pg.w} /Height ${pg.h} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${pg.bytes.length} >>\nstream\n`);
+    push(pg.bytes); push("\nendstream\nendobj\n");
+  });
+  const total = 3 + 3 * n, xref = off;
+  let x = `xref\n0 ${total}\n0000000000 65535 f \n`;
+  for (let k = 1; k < total; k++) x += String(offs[k]).padStart(10, "0") + " 00000 n \n";
+  push(x); push(`trailer\n<< /Size ${total} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF\n`);
+  return new Blob(parts, {type: "application/pdf"});
+}
+let REPORT = null;
+async function openReport(){
+  const hid = S.hid; if (!hid) return;
+  const h = S.houses.get(hid) || {};
+  $("#report-title").textContent = `ڕاپۆرتی خانووی ${h.number || ""}`;
+  $("#report").classList.add("show");
+  const body = $("#report-body"); body.innerHTML = `<div class="empty" style="width:100%;max-width:620px">ئامادەکردنی لاپەڕەکان…</div>`;
+  const btn = $("#dl-btn"); btn.disabled = true; $("#pr-btn").disabled = true; $("#sh-btn").disabled = true;
+  REPORT && REPORT.urls.forEach(u => URL.revokeObjectURL(u));
+  REPORT = null;
+  try {
+    await loadFonts();
+    const t = totals(hid);
+    const nl = Math.max(1, t.lists.length), n = nl + 1;
+    const canvases = [];
+    for (let i = 0; i < nl; i++) canvases.push(drawList(h, t, i, i + 1, n));
+    canvases.push(drawSummary(h, t, n, n));
+    const pages = [], urls = [];
+    for (const c of canvases){
+      const blob = await toJpeg(c);
+      pages.push({w: c.width, h: c.height, bytes: new Uint8Array(await blob.arrayBuffer())});
+      urls.push(URL.createObjectURL(blob));
+    }
+    const pdf = buildPdf(pages);
+    REPORT = {pdf, urls, name: `xanu-${latin(h.number || "").replace(/[^A-Za-z0-9_-]+/g, "") || "report"}.pdf`};
+    body.innerHTML = urls.map((u, i) => `<img src="${u}" alt="لاپەڕەی ${ku(i + 1)}">`).join("");
+    btn.disabled = false; $("#pr-btn").disabled = false;
+    const sh = $("#sh-btn");
+    try { const f = new File([pdf], REPORT.name, {type: "application/pdf"}); sh.hidden = !(navigator.canShare && navigator.canShare({files: [f]})); } catch(e) { sh.hidden = true; }
+    sh.disabled = false;
+  } catch(e){
+    body.innerHTML = `<div class="empty" style="width:100%;max-width:620px">دروستکردنی ڕاپۆرت شکستی هێنا. دابیخە و دووبارە هەوڵ بدەرەوە.</div>`;
+  }
+}
+function closeReport(){ $("#report").classList.remove("show"); }
+function downloadPdf(){
+  if (!REPORT) return;
+  const url = URL.createObjectURL(REPORT.pdf);
+  const a = document.createElement("a"); a.href = url; a.download = REPORT.name; a.rel = "noopener";
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+  toast("PDFەکە داگیرا");
+}
+function printReport(){
+  if (!REPORT) return;
+  try { window.print(); } catch(e) { toast("پرێنت کار ناکات، PDFەکە دابگرە و لەوێوە پرێنتی بکە"); }
+}
+async function sharePdf(){
+  if (!REPORT) return;
+  try {
+    const f = new File([REPORT.pdf], REPORT.name, {type: "application/pdf"});
+    await navigator.share({files: [f], title: REPORT.name});
+  } catch(e) { if (!(e && e.name === "AbortError")) toast("ناردن سەرکەوتوو نەبوو، PDFەکە دابگرە"); }
+}
+boot();
+</script>
+</body>
+</html>
